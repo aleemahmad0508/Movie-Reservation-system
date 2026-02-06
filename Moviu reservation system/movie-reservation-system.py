@@ -1,312 +1,230 @@
-# -----------------------------
-# Import Tkinter main module
-# -----------------------------
-from tkinter import *
-
-# -----------------------------
-# Import ttk for modern widgets like TreeView & ComboBox
-# -----------------------------
-from tkinter import ttk
-
-# -----------------------------
-# Import messagebox for popup messages
-# -----------------------------
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
 from tkinter import messagebox
-
-# -----------------------------
-# Import pyodbc to connect Python with PostgreSQL
-# -----------------------------
 import pyodbc
+import os
+from datetime import datetime
 
 
-# =====================================================
-# Movie Class (Main Application)
-# =====================================================
 class Movie:
 
-    # -----------------------------
-    # Constructor (runs when object is created)
-    # -----------------------------
     def __init__(self, root):
 
-        # Store root window reference
         self.root = root
+        self.root.title("Cinema Reservation System")
+        
 
-        # Set window title
-        self.root.title("Movie Tickets")
+        # ================= MAIN FRAME =================
+        main_frame = tb.Frame(root, padding=30)
+        main_frame.pack(fill=BOTH, expand=True)
 
-        # Get screen width
-        self.width = self.root.winfo_screenwidth()
-
-        # Get screen height
-        self.height = self.root.winfo_screenheight()
-
-        # Set window to full screen
-        self.root.geometry(f"{self.width}x{self.height}+0+0")
-
-        # -----------------------------
-        # Title Label (Top Heading)
-        # -----------------------------
-        self.title = Label(
-            self.root,                     # Parent window
-            text="Movies Tkicts reservation",  # Heading text
-            bd=4,                          # Border width
-            relief="raised",               # Border style
-            bg="brown",                    # Background color
-            fg="white",                    # Text color
-            font=("Arial", 50, "bold")     # Font style
+        # ================= TITLE =================
+        title = tb.Label(
+            main_frame,
+            text="🎬 CINEMA RESERVATION SYSTEM",
+            font=("Segoe UI", 42, "bold"),
+            bootstyle="inverse-primary",
+            anchor="center"
         )
+        title.pack(fill=X, pady=20)
 
-        # Place title at top and stretch horizontally
-        self.title.pack(side=TOP, fill=X)
+        # ================= CARD =================
+        card = tb.Frame(main_frame, padding=30, bootstyle="dark")
+        card.pack(pady=20)
 
-        # -----------------------------
-        # Main Frame (Container)
-        # -----------------------------
-        self.frame = Frame(
-            self.root,                     # Parent window
-            border=5,                      # Border size
-            relief="ridge",                # Border style
-            bg=self.clr(150, 180, 250)     # Background color
+        # Configure grid spacing
+        for i in range(6):
+            card.columnconfigure(i, weight=1)
+
+        tb.Label(card, text="Select Show",
+                 font=("Segoe UI", 16, "bold")).grid(row=0, column=0, padx=15, pady=15)
+
+        self.option = tb.Combobox(
+            card,
+            values=("first", "second", "third"),
+            state="readonly",
+            width=18,
+            bootstyle="info"
         )
-
-        # Position frame on window
-        self.frame.place(
-            width=self.width - 300,
-            height=self.height - 80,
-            x=150,
-            y=100
-        )
-
-        # -----------------------------
-        # Show Selection Label
-        # -----------------------------
-        self.optionlbl = Label(
-            self.frame,
-            text="Select_show :",
-            bg=self.clr(150, 180, 250),
-            font=("Arial", 20, "bold")
-        )
-
-        # Place label using grid
-        self.optionlbl.grid(row=0, column=0, padx=20, pady=20)
-
-        # -----------------------------
-        # Show Selection Dropdown
-        # -----------------------------
-        self.option = ttk.Combobox(
-            self.frame,                    # Parent frame
-            width=17,                      # Width of box
-            values=("first", "second", "third"),  # Available shows
-            state="readonly"               # User cannot type
-        )
-
-        # Default value
         self.option.set("select")
+        self.option.grid(row=0, column=1, padx=15)
 
-        # Place dropdown
-        self.option.grid(row=0, column=1, padx=20, pady=20)
+        tb.Label(card, text="Your Name",
+                 font=("Segoe UI", 16, "bold")).grid(row=0, column=2, padx=15)
 
-        # -----------------------------
-        # Name Label
-        # -----------------------------
-        namelbl = Label(
-            self.frame,
-            text="your_name :",
-            bg=self.clr(150, 180, 250),
-            font=("arial", 15, "bold")
+        self.name = tb.Entry(card, width=20, bootstyle="secondary")
+        self.name.grid(row=0, column=3, padx=15)
+
+        # ================= BUTTONS =================
+        tb.Button(
+            card,
+            text="🎟 Reserve",
+            bootstyle="success-outline",
+            width=15,
+            command=self.reserveFun
+        ).grid(row=0, column=4, padx=10)
+
+        tb.Button(
+            card,
+            text="📜 History",
+            bootstyle="warning-outline",
+            width=15,
+            command=self.showHistory
+        ).grid(row=0, column=5, padx=10)
+
+        # ================= MOVIE TABLE =================
+        table_frame = tb.Frame(main_frame)
+        table_frame.pack(fill=BOTH, expand=True, padx=150, pady=30)
+
+        self.table = tb.Treeview(
+            table_frame,
+            columns=("show", "time", "movie", "price", "seats"),
+            show="headings",
+            bootstyle="info"
         )
 
-        # Place name label
-        namelbl.grid(row=0, column=2, padx=20, pady=20)
+        headings = ["Show", "Time", "Movie", "Price", "Seats"]
 
-        # -----------------------------
-        # Name Entry Box
-        # -----------------------------
-        self.name = Entry(
-            self.frame,
-            bd=2,
-            font=("arial", 15)
+        for col, heading in zip(
+                ("show", "time", "movie", "price", "seats"),
+                headings):
+            self.table.heading(col, text=heading)
+            self.table.column(col, anchor=CENTER, width=150)
+
+        self.table.pack(fill=BOTH, expand=True)
+
+        # ================= FOOTER =================
+        footer = tb.Label(
+            main_frame,
+            text="Developed by Aleem Ahmad | Professional Cinema Management System",
+            font=("Segoe UI", 12),
+            bootstyle="secondary"
         )
+        footer.pack(pady=10)
 
-        # Place entry box
-        self.name.grid(row=0, column=3, padx=20, pady=20)
-
-        # -----------------------------
-        # Reserve Button
-        # -----------------------------
-        self.button = Button(
-            self.frame,
-            text="Reserve",
-            font=("arial", 15, "bold"),
-            bd=3,
-            width=8,
-            relief=RAISED,
-            command=self.reserveFun   # Call reserveFun on click
-        )
-
-        # Place button
-        self.button.grid(row=0, column=4, padx=20, pady=20)
-
-        # Call table creation function
-        self.tabfram()
-
-
-    # =====================================================
-    # Table Frame (Movie Data Display)
-    # =====================================================
-    def tabfram(self):
-
-        # Create frame for table
-        tabframe = Frame(self.frame, bd=5, relief=SUNKEN, bg="cyan")
-
-        # Position table frame
-        tabframe.place(
-            width=self.width - 400,
-            height=self.height - 380,
-            x=50,
-            y=90
-        )
-
-        # Horizontal scrollbar
-        x_scrol = Scrollbar(tabframe, orient=HORIZONTAL)
-        x_scrol.pack(side=BOTTOM, fill=X)
-
-        # Vertical scrollbar
-        y_scroll = Scrollbar(tabframe, orient=VERTICAL)
-        y_scroll.pack(side=RIGHT, fill=Y)
-
-        # -----------------------------
-        # TreeView Table
-        # -----------------------------
-        self.table = ttk.Treeview(
-            tabframe,
-            columns=("show", "time", "Movie", "price", "seats"),
-            xscrollcommand=x_scrol.set,
-            yscrollcommand=y_scroll.set
-        )
-
-        # Connect scrollbars
-        x_scrol.config(command=self.table.xview)
-        y_scroll.config(command=self.table.yview)
-
-        # Set column headings
-        self.table.heading("show", text="show_no")
-        self.table.heading("time", text="Movie_time")
-        self.table.heading("Movie", text="Movie_name")
-        self.table.heading("price", text="price")
-        self.table.heading("seats", text="Seats")
-
-        # Hide default column
-        self.table["show"] = "headings"
-
-        # Pack table
-        self.table.pack(fill=BOTH, expand=1)
-
-        # Load data from database
         self.showFun()
 
-
     # =====================================================
-    # Show Data Function (READ from DB)
+    # Show Movie Data
     # =====================================================
     def showFun(self):
         try:
-            # Connect to database
             self.dbFun()
-
-            # Execute SELECT query
             self.cursor.execute("SELECT * FROM movie")
-
-            # Fetch all rows
             rows = self.cursor.fetchall()
 
-            # Clear existing table data
             self.table.delete(*self.table.get_children())
 
-            # Insert rows into table
             for r in rows:
                 self.table.insert("", END, values=r)
 
-            # Close database connection
             self.conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error : {e}")
-
+            messagebox.showerror("Database Error", str(e))
 
     # =====================================================
-    # Reserve Seat Function (UPDATE DB)
+    # Reserve Seat + Save History
     # =====================================================
     def reserveFun(self):
 
-        # Get selected show
         opt = self.option.get()
-
-        # Get entered name
         name = self.name.get()
 
-        # Validate input
-        if opt == "select" or name == "":
-            messagebox.showerror("Error", "please enter a name and select option")
+        if opt == "select" or name.strip() == "":
+            messagebox.showerror("Error", "Please enter name and select show")
             return
 
         try:
-            # Connect to database
             self.dbFun()
 
-            # Fetch movie data
             self.cursor.execute(
                 "SELECT Movie, price, seats FROM movie WHERE show_no=?",
                 (opt,)
             )
 
-            # Fetch one record
             row = self.cursor.fetchone()
 
-            # Check invalid show
             if row is None:
                 messagebox.showerror("Error", "Invalid show selected")
-                self.conn.close()
                 return
 
-            # Check seat availability
             if row[2] <= 0:
-                messagebox.showerror("Error", f"All seats are reserved Sorry {name}")
-                self.conn.close()
+                messagebox.showerror("Error", "No seats available")
                 return
 
-            # Update seats
+            # Update seat
             self.cursor.execute(
                 "UPDATE movie SET seats=? WHERE show_no=?",
                 (row[2] - 1, opt)
             )
 
-            # Save changes
             self.conn.commit()
-
-            # Success message
-            messagebox.showinfo(
-                "Success",
-                f"Seat reserved for {name}\nNow pay amount {row[1]}"
-            )
-
-            # Close connection
             self.conn.close()
 
-            # Refresh table
+            # Save history with timestamp
+            with open("history.txt", "a") as file:
+                file.write(
+                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | "
+                    f"Name: {name} | Show: {opt} | "
+                    f"Movie: {row[0]} | Price: {row[1]}\n"
+                )
+
+            messagebox.showinfo(
+                "Success",
+                f"🎉 Seat Reserved Successfully!\n\nName: {name}\nMovie: {row[0]}\nAmount: {row[1]}"
+            )
+
+            self.name.delete(0, END)
+            self.option.set("select")
+
             self.showFun()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error : {e}")
-
+            messagebox.showerror("Database Error", str(e))
 
     # =====================================================
-    # Database Connection Function
+    # Show History Window
+    # =====================================================
+    def showHistory(self):
+
+        history_window = tb.Toplevel(self.root)
+        history_window.title("Reservation History")
+        history_window.geometry("800x500")
+
+        header = tb.Label(
+            history_window,
+            text="📜 BOOKING HISTORY",
+            font=("Segoe UI", 24, "bold"),
+            bootstyle="inverse-info"
+        )
+        header.pack(fill=X)
+
+        text_area = tb.Text(history_window, font=("Consolas", 12))
+        text_area.pack(fill=BOTH, expand=True, padx=20, pady=20)
+
+        if os.path.exists("history.txt"):
+            with open("history.txt", "r") as file:
+                text_area.insert(END, file.read())
+        else:
+            text_area.insert(END, "No booking history found.")
+
+        tb.Button(
+            history_window,
+            text="🗑 Clear History",
+            bootstyle="danger-outline",
+            command=lambda: self.clearHistory(text_area)
+        ).pack(pady=10)
+
+    def clearHistory(self, text_widget):
+        open("history.txt", "w").close()
+        text_widget.delete("1.0", END)
+        messagebox.showinfo("Success", "History Cleared!")
+
+    # =====================================================
+    # Database Connection
     # =====================================================
     def dbFun(self):
-
-        # Create database connection
         self.conn = pyodbc.connect(
             "Driver={PostgreSQL Unicode};"
             "Server=localhost;"
@@ -315,28 +233,10 @@ class Movie:
             "Uid=postgres;"
             "Pwd=password;"
         )
-
-        # Create cursor to execute queries
         self.cursor = self.conn.cursor()
 
 
-    # =====================================================
-    # Color Utility Function
-    # =====================================================
-    def clr(self, r, g, b):
-        # Convert RGB to HEX color
-        return f"#{r:02x}{g:02x}{b:02x}"
-
-
-# =====================================================
-# Application Entry Point
-# =====================================================
-
-# Create Tkinter root window
-root = Tk()
-
-# Create Movie object
-obj = Movie(root)
-
-# Start GUI loop
-root.mainloop()
+if __name__ == "__main__":
+    app = tb.Window(themename="superhero")  # Try: darkly, cyborg, superhero
+    Movie(app)
+    app.mainloop()

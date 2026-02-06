@@ -1,0 +1,4 @@
+Name: Aleem Khan | Show: third | Movie: mission_imposible | Price: 500
+2026-02-06 12:25:56 | Name: ferhan khan | Show: third | Movie: mission_imposible | Price: 500
+2026-02-06 12:30:10.922047 | Name: Aleem | Show: 2 | Seat: B2
+2026-02-06 12:31:00.635178 | Name: ferhan | Show: 2 | Seat: D4
